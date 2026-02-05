@@ -1,361 +1,106 @@
-# 🛡️ Windows 10 Hardening Scripts
+# 🛡️ Windows 10 Hardening Suite
 
-A complete set of PowerShell scripts to apply and verify security hardening configurations on Windows 10 workstations.
+This project is a **Hardening** script for Windows 10, specifically designed to reduce the attack surface on home desktops. It transforms the system from a default configuration (focused on convenience) to a setup focused on **proactive security and privacy**.
 
-## 📋 Contents
+## 🎯 Objective
 
-* **`hardening-win10.ps1`** – Main script that applies security configurations
-* **`hardening-check.ps1`** – Verification script that confirms whether the configurations were correctly applied
+The script applies rigorous controls based on international frameworks to prevent the exploitation of known vulnerabilities, block common attack vectors (such as Ransomware via VBS), and mitigate excessive data collection.
 
-## ⚡ Quick Execution
+---
 
-```powershell
-# 1. Apply hardening
-.\hardening-win10.ps1
+## 🔍 Detailed Features and Functionality
 
-# 2. Verify configurations
-.\hardening-check.ps1
-```
+### 1. Attack Surface Reduction via Services
 
-## 🔧 hardening-win10.ps1
+Windows runs several background processes that increase entry points for an attacker. This script disables the following services:
 
-### What does it do?
+* **RemoteRegistry:** Prevents the Windows Registry from being modified remotely (a critical vector for lateral movement).
+* **Fax:** Disables support for legacy and obsolete hardware.
+* **DiagTrack (Telemetry):** Stops the collection and transmission of usage data to Microsoft.
+* **XblGameSave & XboxNetApiSvc:** Removes Xbox integration processes unnecessary for productivity and security.
+* **MapsBroker:** Disables background location monitoring for offline maps.
+* **WerSvc:** Blocks the sending of error reports that may contain sensitive fragments of data from RAM.
 
-This script applies **10 main categories** of security configurations:
+### 2. Legacy Protocols: Disabling SMBv1
 
-#### 1. 🛑 Disables Unnecessary Services
+The SMBv1 protocol has design flaws dating back 30 years.
 
-* **Xbox** (XblGameSave, XboxNetApiSvc, XboxGipSvc)
-* **Telemetry** (DiagTrack, dmwappushservice)
-* **Media** (WMPNetworkSvc)
-* **Others** (RemoteRegistry, Fax, RetailDemo, WerSvc, MapsBroker, SharedAccess, TrkWks, PhoneSvc)
+* **Impact:** Protection against remote code execution attacks, such as the infamous **WannaCry** and **EternalBlue**. The script removes both the SMBv1 client and server.
 
-#### 2. 🚫 Removes SMBv1 (Vulnerable Protocol)
+### 3. Patch Management: Windows Update
 
-* Disables SMBv1 client and server
-* Enforces SMB security signing
-* Removes SMBv1 Windows features
+Enforces Windows Update behavior to ensure the system is never left vulnerable due to forgetfulness.
 
-#### 3. 🔄 Configures Windows Update
+* **Configuration:** Sets automatic update downloads and installation notifications, ensuring that critical security patches are applied as quickly as possible.
 
-* Enables automatic download and installation
-* Prevents automatic reboot while users are logged in
+### 4. Identity Strengthening: Password Policy
 
-#### 4. 🔐 Strong Password Policies
+Increases resistance against Brute Force attacks.
 
-* **Minimum length:** 12 characters
-* **Expiration:** 90 days
-* **History:** 24 previous passwords
-* **Lockout:** 5 attempts → lock for 15 minutes
-* **Complexity:** Enabled via secedit
+* **Rules:** Requires a minimum length of **12 characters**, enables mandatory complexity, and implements a **Lockout Policy** (account lockout for 15 minutes after 5 incorrect attempts).
 
-#### 5. 🔥 Windows Firewall
+### 5. Perimeter Defense: Total Firewall
 
-* Enables protection on **all profiles** (Domain, Private, Public)
-* Enables logging of allowed and blocked connections
+Ensures that the Windows Firewall is never "relaxed" by the user when switching networks.
 
-#### 6. 🛑 UAC (User Account Control)
+* **Action:** Enables the Firewall on all three profiles: **Domain, Private, and Public**.
 
-* Forces confirmation for administrators
-* Prompts for credentials for standard users
-* Keeps UAC always enabled
+### 6. Malware Protection: WSH Blocking
 
-#### 7. 📜 Event Auditing
+Many phishing attacks deliver `.vbs` or `.js` files.
 
-* **Logon/Logoff** (success and failure)
-* **Account lockout**
-* **User management**
-* **Process creation**
-* **System events**
+* **What it does:** Disables the *Windows Script Host*.
+* **Result:** Prevents malicious scripts from being executed directly by the user when clicking on fake email attachments.
 
-#### 8. 🛡️ Windows Defender
+### 7. Privilege Control: Maximum UAC
 
-* Real-time protection always enabled
-* Daily scan at **02:00**
-* Advanced MAPS reporting
-* Automatic submission of suspicious samples
+User Account Control is the last barrier between a common process and administrative control.
 
-#### 9. ⚙️ Additional Security Settings
+* **Configuration:** Sets the maximum notification level on the **Secure Desktop**. This prevents software from attempting to simulate clicks or elevate privileges without your direct interaction in a protected area of the system.
 
-* **LM Hash disabled** (prevents hash-based attacks)
-* **Idle timeout:** 15 minutes
-* **AutoRun disabled** (USB drives do not execute automatically)
-* **Windows Script Host disabled** (blocks .vbs, .js)
+### 8. Privacy and Integrity: Cloudflare DNS
 
-#### 10. 💻 PowerShell Execution Policy
+Redirects your name queries to a secure infrastructure.
 
-* Sets policy to **RemoteSigned** (only local or signed scripts can run)
+* **DNS 1.1.1.1:** Protects against **DNS Hijacking** (redirection to fake websites) and prevents your Internet Service Provider (ISP) from mapping your browsing history through DNS queries.
 
-### Prerequisites
+### 9. Memory Protection: Exploit Protection
 
-* Windows 10
-* **Run as Administrator** (mandatory)
-* PowerShell 5.0 or higher
+Applies Kernel-level defense techniques that make it difficult to create functional exploits.
 
-### How to use
+* **DEP (Data Execution Prevention):** Prevents malicious code from running in memory areas reserved only for data.
+* **ASLR (Address Space Layout Randomization):** Randomizes where system code is loaded into memory, making the target of a buffer overflow attack unpredictable.
+
+### 10. Visual Transparency: File Extensions
+
+Configures the system to always display the full file extension (e.g., `file.pdf.exe`).
+
+* **Security:** Allows the user to identify malicious files disguised with fake document icons.
+
+---
+
+## 🚀 How to Run
+
+The script uses **"Audit-First"** logic: it checks if the system is already secure before asking if you want to apply the fix.
+
+Open **PowerShell as Administrator** and execute the command below:
 
 ```powershell
-# Clone or download the script
-# Open PowerShell as Administrator
-# Run:
-.\hardening-win10.ps1
-```
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/hardening-win10.ps1'))
 
-### Expected Output
-
-```
-[INFO] Starting Windows 10 hardening process...
-[SUCCESS] RemoteRegistry service disabled
-[SUCCESS] SMBv1 successfully disabled
-[SUCCESS] Windows Update configured
-[SUCCESS] Password policies configured
-[SUCCESS] Windows Firewall configured and enabled
-[SUCCESS] UAC configured
-[SUCCESS] Auditing configured
-[SUCCESS] Windows Defender configured
-[SUCCESS] Additional security settings applied
-[SUCCESS] PowerShell Execution Policy configured
-
-[WARNING] IMPORTANT: Reboot the system for all changes to take full effect.
-[INFO] Hardening process completed!
-
-Do you want to restart the system now? (Y/N)
 ```
 
 ---
 
-## 🔍 hardening-check.ps1
+## ⚠️ Attention and Responsibility
 
-### What does it do?
+Applying Hardening involves a **trade-off** between security and convenience.
 
-A **verification and auditing** script that confirms whether all hardening configurations were correctly applied.
+* Disabling Xbox services will affect games that rely on the Live network.
+* Blocking WSH may prevent the execution of old administrative scripts.
+* The password policy requires you to use strong passwords to avoid being locked out.
 
-### Checks performed
-
-#### ✅ Service Status
-
-* Confirms that all listed services are **disabled** and **stopped**
-
-#### 🛡️ SMB Configuration
-
-* Verifies mandatory signing on client and server
-* Confirms SMBv1 feature is disabled
-
-#### 🔄 Windows Update
-
-* Checks automatic installation settings
-* Verifies reboot policies
-
-#### 🔐 Password Policies
-
-* Validates minimum length (≥12 characters)
-* Confirms lockout threshold (≤5 attempts)
-* Verifies LM Hash is disabled
-
-#### 🔥 Windows Firewall
-
-* Confirms firewall is enabled on all profiles
-* Verifies logging configuration
-
-#### 🛑 UAC
-
-* Validates settings for administrators and standard users
-* Confirms UAC is enabled
-
-#### 📜 Auditing
-
-* Verifies all audit categories are active
-* Confirms success and failure logs
-
-#### 🛡️ Windows Defender
-
-* Confirms real-time protection
-* Verifies reporting and sample submission settings
-* Checks overall antivirus status
-
-#### ⚙️ Additional Settings
-
-* Idle timeout
-* AutoRun disabled
-* Windows Script Host blocked
-
-#### 💻 PowerShell
-
-* Confirms Execution Policy is set to RemoteSigned
-
-### How to use
-
-```powershell
-# After running hardening-win10.ps1
-# Run the verification:
-.\hardening-check.ps1
-```
-
-### Expected Output
-
-```
-============================================================
-1. DISABLED SERVICES VERIFICATION
-============================================================
-[OK] RemoteRegistry service is disabled
-[OK] DiagTrack service is disabled
-[INFO] Fax service does not exist on this system
-
-============================================================
-FINAL VERIFICATION REPORT
-============================================================
-[INFO] Total checks: 45
-[OK] Passed checks: 42
-[WARNING] Checks with warnings: 2
-[FAIL] Failed checks: 1
-[INFO] Success rate: 93.3%
-
-[OK] CONGRATULATIONS! All essential security configurations are applied!
-```
-
-### Status Codes
-
-* **[OK]** 🟢 – Configuration correctly applied
-* **[WARNING]** 🟡 – Partial configuration or requires attention
-* **[FAIL]** 🔴 – Configuration not applied or incorrect
-* **[INFO]** 🔵 – Additional information
-
----
-
-## ⚠️ Impacts and Considerations
-
-### 🎮 Games and Xbox
-
-* **Xbox services disabled** → Xbox features and some games may not work
-* **Solution:** Manually re-enable if needed
-
-### 📡 Network and Legacy Devices
-
-* **SMBv1 disabled** → Old printers or legacy NAS devices may stop working
-* **Restrictive firewall** → Some applications may require manual rules
-* **Solution:** Configure specific exceptions or update devices
-
-### 🔒 Usability
-
-* **UAC always enabled** → More confirmation prompts
-* **Strict password policies** → Complex passwords required
-* **AutoRun disabled** → USB drives do not auto-execute
-* **Scripts blocked** → .vbs/.js files will not run
-
-### 📊 Performance
-
-* **Auditing enabled** → Detailed logs (may consume disk space)
-* **Windows Defender** → Daily scan at 2 AM (may affect performance)
-
-### 🔄 Reboot
-
-* **Mandatory** → Some settings only apply after restart
-
----
-
-## 🚀 Usage Guide
-
-### 1. Preparation
-
-```powershell
-# Download the scripts
-# Open PowerShell as Administrator
-# Navigate to the script folder
-cd C:\path\to\scripts
-```
-
-### 2. Hardening Execution
-
-```powershell
-# Run hardening
-.\hardening-win10.ps1
-
-# Restart the system when prompted
-```
-
-### 3. Verification
-
-```powershell
-# After reboot, run verification
-.\hardening-check.ps1
-
-# Optional: Save the report
-# The script will ask if you want to save it to a file
-```
-
-### 4. Interpreting Results
-
-#### Success Rate
-
-* **90–100%** 🟢 Excellent – System well protected
-* **75–89%** 🟡 Good – Some improvements needed
-* **<75%** 🔴 Poor – Re-run the hardening
-
----
-
-## 🎯 Usage Scenarios
-
-### 🏢 Corporate Environment
-
-* **Recommended:** Run on all workstations
-* **Benefits:** Security policy compliance
-* **Caution:** Test on a pilot group first
-
-### 🏠 Personal Use
-
-* **Evaluate:** Some restrictions may be inconvenient
-* **Customize:** Relax password policies if necessary
-* **Benefits:** Extra protection against malware
-
-### 🧪 Test Environment
-
-* **Ideal:** Validate configurations before production
-* **Use:** Verification script for audits
-
----
-
-## 🆘 Troubleshooting
-
-### Error: “Script must be run as Administrator”
-
-```powershell
-# Right-click PowerShell
-# Select "Run as administrator"
-```
-
-### Error: “Execution Policy”
-
-```powershell
-# Temporarily run:
-Set-ExecutionPolicy Bypass -Scope Process -Force
-.\hardening-win10.ps1
-```
-
-### Legacy devices stop working
-
-```powershell
-# Re-enable SMBv1 (NOT RECOMMENDED):
-Enable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Client"
-Enable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol-Server"
-```
-
-### Reverting settings
-
-* No automatic rollback script
-* Use `gpedit.msc` or `regedit` for manual changes
-* Restore system backup if available
-
----
-
-## 📋 Validation Checklist
-
-After running both scripts, confirm:
-
-* [ ] Success rate > 90%
-* [ ] No critical failures in essential services
-* [ ] Network devices functioning
-* [ ] Critical applications working
-* [ ] System backup created (recommended)
+**Review each topic during interactive execution to ensure it meets your needs.**
 
 ---
 
@@ -363,24 +108,6 @@ After running both scripts, confirm:
 
 * [Microsoft Security Compliance Toolkit](https://www.microsoft.com/en-us/download/details.aspx?id=55319)
 * [CIS Benchmarks for Windows 10](https://www.cisecurity.org/benchmark/microsoft_windows_desktop)
-* [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
+* [NIST Cybersecurity Framework (CSF)](https://www.nist.gov/cyberframework)
 
 ---
-
-## 📄 License
-
-Scripts provided for educational and security purposes. Always test in a controlled environment before applying in production.
-
----
-
-## 🤝 Contributions
-
-Suggestions for improvements are welcome. Remember to:
-
-* Test in an isolated environment
-* Document changes
-* Maintain Windows 10 compatibility
-
----
-
-**⚠️ IMPORTANT:** Always back up the system before applying hardening in production.
