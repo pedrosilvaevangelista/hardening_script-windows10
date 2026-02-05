@@ -1,4 +1,4 @@
-# 🛡️ Windows 10 Hardening Suite
+# 🛡️ Windows 10 Hardening
 
 This project is a **Hardening** script for Windows 10, specifically designed to reduce the attack surface on home desktops. It transforms the system from a default configuration (focused on convenience) to a setup focused on **proactive security and privacy**.
 
