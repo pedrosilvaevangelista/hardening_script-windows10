@@ -1,113 +1,54 @@
-# 🛡️ Windows 10 Hardening
+# Windows 10 Hardening
 
-This project is a **Hardening** script for Windows 10, specifically designed to reduce the attack surface on home desktops. It transforms the system from a default configuration (focused on convenience) to a setup focused on **proactive security and privacy**.
+A straightforward PowerShell automation script designed to sharply reduce the attack surface of Windows 10 home machines, enforcing a robust cybersecurity posture aligned with **NIST** and **CIS** guidelines.
 
-## 🎯 Objective
+## Objective
 
-The script applies rigorous controls based on international frameworks to prevent the exploitation of known vulnerabilities, block common attack vectors (such as Ransomware via VBS), and mitigate excessive data collection.
-
----
-
-## 🔍 Detailed Features and Functionality
-
-### 1. Attack Surface Reduction via Services
-
-Windows runs several background processes that increase entry points for an attacker. This script disables the following services:
-
-* **RemoteRegistry:** Prevents the Windows Registry from being modified remotely (a critical vector for lateral movement).
-* **Fax:** Disables support for legacy and obsolete hardware.
-* **DiagTrack (Telemetry):** Stops the collection and transmission of usage data to Microsoft.
-* **XblGameSave & XboxNetApiSvc:** Removes Xbox integration processes unnecessary for productivity and security.
-* **MapsBroker:** Disables background location monitoring for offline maps.
-* **WerSvc:** Blocks the sending of error reports that may contain sensitive fragments of data from RAM.
-
-### 2. Legacy Protocols: Disabling SMBv1
-
-The SMBv1 protocol has design flaws dating back 30 years.
-
-* **Impact:** Protection against remote code execution attacks, such as the infamous **WannaCry** and **EternalBlue**. The script removes both the SMBv1 client and server.
-
-### 3. Patch Management: Windows Update
-
-Enforces Windows Update behavior to ensure the system is never left vulnerable due to forgetfulness.
-
-* **Configuration:** Sets automatic update downloads and installation notifications, ensuring that critical security patches are applied as quickly as possible.
-
-### 4. Identity Strengthening: Password Policy
-
-Increases resistance against Brute Force attacks.
-
-* **Rules:** Requires a minimum length of **12 characters**, enables mandatory complexity, and implements a **Lockout Policy** (account lockout for 15 minutes after 5 incorrect attempts).
-
-### 5. Perimeter Defense: Total Firewall
-
-Ensures that the Windows Firewall is never "relaxed" by the user when switching networks.
-
-* **Action:** Enables the Firewall on all three profiles: **Domain, Private, and Public**.
-
-### 6. Malware Protection: WSH Blocking
-
-Many phishing attacks deliver `.vbs` or `.js` files.
-
-* **What it does:** Disables the *Windows Script Host*.
-* **Result:** Prevents malicious scripts from being executed directly by the user when clicking on fake email attachments.
-
-### 7. Privilege Control: Maximum UAC
-
-User Account Control is the last barrier between a common process and administrative control.
-
-* **Configuration:** Sets the maximum notification level on the **Secure Desktop**. This prevents software from attempting to simulate clicks or elevate privileges without your direct interaction in a protected area of the system.
-
-### 8. Privacy and Integrity: Cloudflare DNS
-
-Redirects your name queries to a secure infrastructure.
-
-* **DNS 1.1.1.1:** Protects against **DNS Hijacking** (redirection to fake websites) and prevents your Internet Service Provider (ISP) from mapping your browsing history through DNS queries.
-
-### 9. Memory Protection: Exploit Protection
-
-Applies Kernel-level defense techniques that make it difficult to create functional exploits.
-
-* **DEP (Data Execution Prevention):** Prevents malicious code from running in memory areas reserved only for data.
-* **ASLR (Address Space Layout Randomization):** Randomizes where system code is loaded into memory, making the target of a buffer overflow attack unpredictable.
-
-### 10. Visual Transparency: File Extensions
-
-Configures the system to always display the full file extension (e.g., `file.pdf.exe`).
-
-* **Security:** Allows the user to identify malicious files disguised with fake document icons.
+Shift Windows from a convenience-first operating system to a proactive security environment. This prevents data leaks, stops ransomware deployment vectors, and neutralizes lateral network pivoting techniques gracefully.
 
 ---
 
-## 🚀 How to Run
+## Security Baselines
 
-The script uses **"Audit-First"** logic: it checks if the system is already secure before asking if you want to apply the fix.
+This project applies thirteen critical security baselines natively:
 
-Open **PowerShell as Administrator** and execute the command below:
+1. **Unnecessary Services Disabled**
+   Neutralizes `RemoteRegistry`, `DiagTrack` (Telemetry), legacy Fax, and arbitrary Xbox hooks to block unseen exploitation paths.
+2. **SMBv1 Deprecation**
+   Eradicates the 30-year-old vulnerable file-sharing flaw that accelerated the WannaCry crisis.
+3. **Firm Patch Management**
+   Locks Windows Update behavior into strict notifications, ensuring urgent patches deploy without auto-reboot workspace disruptions.
+4. **Identity Strengthening**
+   Demands 12-character complex passwords and enforces tight account lockout policies (15-minute lockout after 5 failing tries).
+5. **Universal Firewall Guarantee**
+   Assures that Domain, Private, and Public profiles are strictly loaded and switched on persistently.
+6. **WSH Automation Truncation**
+   Halts the Windows Script Host to deny drive-by `.vbs` and `.js` malware scripts from parsing.
+7. **UAC Maximum Alert Constraint**
+   Forces administrative consent strictly over a secure desktop space to barricade silent privilege escalation.
+8. **Cloudflare Privacy DNS**
+   Sets global `1.1.1.1` endpoints to neutralize ISP routing sniffing and severe internal DNS Hijacking tools.
+9. **Hardware Exploit Mitigations**
+   Activates severe base DEP/ASLR randomization at the underlying OS engine to defend against zero-day anomalies.
+10. **Visible Extensions Imposed**
+    Drops the curtain hiding the true executable extensions (stops fake `.pdf.exe` targeted payloads).
+11. **PowerShell Advanced Tracing**
+    Injects transparent event auditing logs to trace every powershell process behavior deployed natively or stealthily.
+12. **Corporate Telemetry Eradicator**
+    Drops root analytic collections explicitly enforcing `AllowTelemetry = 0` throughout system layers.
+13. **AutoPlay Zero Trust Mechanism**
+    Defeats physical infected USB delivery attacks natively shutting down interactive/background drive mountings.
+
+---
+
+## Quick Deployment
+
+The deployment uses an interactive **Audit First** concept. A fast UI checks security layers and will gently ask consent (`Y/N`) to harden and apply registry keys securely.
+
+Execute a clean **PowerShell terminal as Administrator**, then invoke the execution framework block:
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/hardening-win10.ps1'))
-
 ```
 
----
-
-## ⚠️ Attention and Responsibility
-
-Applying Hardening involves a **trade-off** between security and convenience.
-
-* Disabling Xbox services will affect games that rely on the Live network.
-* Blocking WSH may prevent the execution of old administrative scripts.
-* The password policy requires you to use strong passwords to avoid being locked out.
-
-**Review each topic during interactive execution to ensure it meets your needs.**
-
----
-
-## 📚 References
-
-* [Microsoft Security Compliance Toolkit](https://www.microsoft.com/en-us/download/details.aspx?id=55319)
-* [CIS Benchmarks for Windows 10](https://www.cisecurity.org/benchmark/microsoft_windows_desktop)
-* [NIST Cybersecurity Framework (CSF)](https://www.nist.gov/cyberframework)
-
----
+> **Recommendation:** Allow an immediate system restart when completed to bind registry configurations flawlessly.

@@ -252,6 +252,76 @@ Manage-Step -Title "Show File Extensions" `
     }
 
 # ==============================================================================
+# STEP 11: POWERSHELL LOGGING
+# ==============================================================================
+Manage-Step -Title "PowerShell Advanced Logging" `
+    -Description "Enable Script Block and Module Logging for security auditing." `
+    -Risk "Increases Event Viewer log size (Microsoft-Windows-PowerShell)." `
+    -CheckScript {
+        $sb = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -ErrorAction SilentlyContinue).EnableScriptBlockLogging
+        $ml = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" -ErrorAction SilentlyContinue).EnableModuleLogging
+        return ($sb -eq 1) -and ($ml -eq 1)
+    } `
+    -ActionScript {
+        $psPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell"
+        $sbPath = "$psPath\ScriptBlockLogging"
+        $mlPath = "$psPath\ModuleLogging"
+        
+        if (!(Test-Path $sbPath)) { New-Item -Path $sbPath -Force | Out-Null }
+        if (!(Test-Path $mlPath)) { New-Item -Path $mlPath -Force | Out-Null }
+        
+        Set-ItemProperty -Path $sbPath -Name "EnableScriptBlockLogging" -Value 1
+        Set-ItemProperty -Path $mlPath -Name "EnableModuleLogging" -Value 1
+        
+        # Enforce for all modules
+        $moPath = "$mlPath\ModuleNames"
+        if (!(Test-Path $moPath)) { New-Item -Path $moPath -Force | Out-Null }
+        Set-ItemProperty -Path $moPath -Name "*" -Value "1"
+    }
+
+# ==============================================================================
+# STEP 12: TELEMETRY (DEEP BLOCK)
+# ==============================================================================
+Manage-Step -Title "Block OS Telemetry via Registry" `
+    -Description "Forces AllowTelemetry to 0 in diagnostic data collection." `
+    -Risk "Might prevent participation in the Windows Insider Program." `
+    -CheckScript {
+        $val = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -ErrorAction SilentlyContinue).AllowTelemetry
+        return $val -eq 0
+    } `
+    -ActionScript {
+        $path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+        if (!(Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
+        Set-ItemProperty -Path $path -Name "AllowTelemetry" -Value 0
+    }
+
+# ==============================================================================
+# STEP 13: AUTORUN / AUTOPLAY
+# ==============================================================================
+Manage-Step -Title "Block AutoRun/AutoPlay" `
+    -Description "Prevents automatic execution of USB drives and unknown media." `
+    -Risk "You will manually need to open USB drives using File Explorer." `
+    -CheckScript {
+        $val1 = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ErrorAction SilentlyContinue).NoDriveTypeAutoRun
+        $val2 = (Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ErrorAction SilentlyContinue).NoDriveTypeAutoRun
+        $val3 = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -ErrorAction SilentlyContinue).DisableAutoplay
+        return ($val1 -eq 255) -and ($val2 -eq 255) -and ($val3 -eq 1)
+    } `
+    -ActionScript {
+        $policiesHKLM = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"
+        $policiesHKCU = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"
+        $autoplayHKCU = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers"
+        
+        if (!(Test-Path $policiesHKLM)) { New-Item -Path $policiesHKLM -Force | Out-Null }
+        if (!(Test-Path $policiesHKCU)) { New-Item -Path $policiesHKCU -Force | Out-Null }
+        if (!(Test-Path $autoplayHKCU)) { New-Item -Path $autoplayHKCU -Force | Out-Null }
+        
+        Set-ItemProperty -Path $policiesHKLM -Name "NoDriveTypeAutoRun" -Value 255 -Type DWord
+        Set-ItemProperty -Path $policiesHKCU -Name "NoDriveTypeAutoRun" -Value 255 -Type DWord
+        Set-ItemProperty -Path $autoplayHKCU -Name "DisableAutoplay" -Value 1 -Type DWord
+    }
+
+# ==============================================================================
 # CONCLUSION
 # ==============================================================================
 Write-Header "HARDENING COMPLETE"
