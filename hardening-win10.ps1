@@ -111,12 +111,12 @@ Manage-Step -Title "Windows Update Control" `
     -Risk "Requires discipline to install updates manually when notified." `
     -CheckScript {
         $val = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU").AUOptions
-        return $val -eq 4
+        return $val -eq 2
     } `
     -ActionScript {
         $path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
         if (!(Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
-        Set-ItemProperty -Path $path -Name "AUOptions" -Value 4
+        Set-ItemProperty -Path $path -Name "AUOptions" -Value 2
         Set-ItemProperty -Path $path -Name "NoAutoRebootWithLoggedOnUsers" -Value 1
     }
 
