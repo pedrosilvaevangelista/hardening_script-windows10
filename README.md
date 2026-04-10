@@ -43,12 +43,38 @@ This project applies thirteen critical security baselines natively:
 
 ## Quick Deployment
 
-The deployment uses an interactive **Audit First** concept. A fast UI checks security layers and will gently ask consent (`Y/N`) to harden and apply registry keys securely.
+All commands below must be run in a **PowerShell terminal as Administrator**.
 
-Execute a clean **PowerShell terminal as Administrator**, then invoke the execution framework block:
+---
+
+### 🔒 Apply Hardening
+
+The deployment uses an interactive **Audit First** concept. A fast UI checks security layers and will gently ask consent (`Y/N`) to harden and apply registry keys securely.
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/hardening-win10.ps1'))
 ```
 
 > **Recommendation:** Allow an immediate system restart when completed to bind registry configurations flawlessly.
+
+---
+
+### ✅ Verify Hardening
+
+Runs the Pester-based test suite to validate whether all 13 security controls are correctly applied on the current machine. Requires [Pester](https://pester.dev) (`Install-Module Pester -Force`).
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/hardening-win10.tests.ps1'))
+```
+
+---
+
+### ↩️ Rollback Hardening
+
+Reverts all security configurations applied by the hardening script, restoring Windows 10 defaults. Each step asks for confirmation before reverting.
+
+> **Warning:** Rolling back reduces your system's security posture significantly.
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/rollback-win10.ps1'))
+```
