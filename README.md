@@ -68,13 +68,3 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 ```
 
 ---
-
-### ↩️ Rollback Hardening
-
-Reverts all security configurations applied by the hardening script, restoring Windows 10 defaults. Each step asks for confirmation before reverting.
-
-> **Warning:** Rolling back reduces your system's security posture significantly.
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/rollback-win10.ps1'))
-```

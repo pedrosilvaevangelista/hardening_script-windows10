@@ -68,13 +68,3 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 ```
 
 ---
-
-### ↩️ Desfazer o Hardening
-
-Reverte todas as configurações de segurança aplicadas pelo script, restaurando os padrões originais do Windows 10. Cada etapa solicita confirmação antes de reverter.
-
-> **Atenção:** Desfazer o hardening reduz significativamente a postura de segurança do sistema.
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/pedrosilvaevangelista/hardening_script-windows10/main/rollback-win10.ps1'))
-```
