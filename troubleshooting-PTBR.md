@@ -23,8 +23,9 @@ Start-Service -Name "XblGameSave"
 **A Restauração:**
 Reverter os protocolos SMBv1 colocará sua rede sob constante ameaça de varredura. Aplique isto apenas no caso extremo no qual exija-se conexão a dispositivos jurássicos corporativos da década passada:
 ```powershell
-Enable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -All
+Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force
 Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "SMB1" -Value 1 -Force
+Enable-WindowsOptionalFeature -Online -FeatureName "SMB1Protocol" -All
 ```
 
 ---
@@ -33,9 +34,11 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Par
 **A Causa:** O clássico `Autorun` e o `AutoPlay` foram apagados via registro por segurança no Passo 13. O computador deixou de inferir sozinho a natureza que foi plugada dentro do chassi à revelia do usuário.
 
 **A Restauração:**
-O dispositivo sempre estará utilizável bastando utilizar um acesso pelo atalho `Win + E` (Explorador de Arquivos) logo após o uso. Se a conveniência automática for inegociável na rotina por conta de fluxos visuais em estações limitadas, abra exceção ao popup do Windows via:
+O dispositivo sempre estará utilizável bastando utilizar um acesso pelo atalho `Win + E` (Explorador de Arquivos) logo após o uso. Se a conveniência automática for inegociável na rotina por conta de fluxos visuais em estações limitadas, reverta completamente via:
 ```powershell
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -Name "DisableAutoplay" -Value 0
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -Name "DisableAutoplay" -Value 0 -Type DWord
 ```
 
 ---
@@ -52,11 +55,11 @@ Caso se perca no login, o sistema entra em quarentena forçada. A regra foi tra�
 **A Causa:** Foi efetuado o direcionamento persistente de DNS seguro via Cloudflare (`1.1.1.1`) no Passo 8, impedindo modems específicos em redes locais e fechadas de rastrear ou assumir conexões.
 
 **A Restauração:**
-Se a internet via cabo ou o provedor DHCP apresentar a trava amarela no Windows, resete o forncimente para obter os credenciamentos da placa em nuvem automaticamente:
+Se a internet via cabo ou o provedor DHCP apresentar a trava amarela no Windows, resete o fornecimento para obter os credenciamentos da placa em nuvem automaticamente:
 ```powershell
 Get-NetAdapter | Where-Object Status -eq "Up" | Set-DnsClientServerAddress -ResetServerAddresses
 ```
 
 ---
 
-> **Nota Adicional:** Cerca de 100% de quaisquer outros bloqueios gerados colateralmente podem ser revertidos localizando a variável `Set-ItemProperty` estrita na codificação de `hardening-win10.ps1` e invertendo para uma base `0` ou `Out-Null` ativamente via modo Administrador.
+> **Nota Adicional:** Para uma reversão completa de todas as 13 configurações, consulte o guia passo a passo em `Troubleshooting.md`.
